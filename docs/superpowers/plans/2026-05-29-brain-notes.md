@@ -10,6 +10,28 @@
 
 ---
 
+## Testing Conventions (overrides inline paths below)
+
+The project path contains a space (`.../Brain Notes/`), which the
+`@cloudflare/vitest-pool-workers` runtime (workerd) cannot resolve. We
+therefore split tests into two suites:
+
+- **Pure-logic tests** (no Worker/D1 bindings) live in **`test/unit/`** and run
+  under plain vitest via `vitest.config.node.js`. Imports reach source with
+  `../../src/...`. Run with `npm run test:unit`. Tasks 1 and 2 use this.
+- **Worker-bound tests** (use `import { env } from "cloudflare:test"` and D1)
+  live in **`test/workers/`** and run via `npm run test:workers`, which mirrors
+  the repo into a space-free dir (with its own `node_modules`) and runs the
+  pool there. Imports reach source with `../../src/...`. Tasks 3, 4, and 6 use
+  this.
+- `npm test` runs both suites.
+
+Wherever a task below says `test/foo.test.js` or `npm test -- foo`, use the
+corresponding `test/unit/` or `test/workers/` path and the matching script
+above. Commit the test file at its real location.
+
+---
+
 ## File Structure
 
 ```
