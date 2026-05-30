@@ -1,0 +1,29 @@
+# Secrets — NEVER commit
+.dev.vars
+.dev.vars.*
+.env
+.env.*
+*.pem
+*.key
+vapid*.json
+secrets/
+wrangler.toml.local
+
+# Cloudflare / Wrangler
+.wrangler/
+.mf/
+
+# Dependencies
+node_modules/
+
+# Build / coverage / logs
+dist/
+coverage/
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
