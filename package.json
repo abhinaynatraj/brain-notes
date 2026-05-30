@@ -1,0 +1,22 @@
+{
+  "name": "brain-notes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute brain_notes --local --file=./schema.sql",
+    "db:init:remote": "wrangler d1 execute brain_notes --remote --file=./schema.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.0",
+    "vitest": "^2.0.0",
+    "wrangler": "^3.80.0"
+  },
+  "dependencies": {
+    "@block65/webcrypto-web-push": "^1.0.0"
+  }
+}

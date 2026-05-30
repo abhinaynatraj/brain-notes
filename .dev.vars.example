@@ -1,0 +1,8 @@
+# Copy to .dev.vars and fill in. NEVER commit .dev.vars.
+ANTHROPIC_API_KEY=sk-ant-...
+SESSION_SECRET=generate-a-long-random-string
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:you@example.com
+EMAIL_API_KEY=
+EMAIL_FROM=Brain Notes <noreply@yourdomain>

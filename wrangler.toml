@@ -1,0 +1,19 @@
+name = "brain-notes"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "brain_notes"
+database_id = "PLACEHOLDER_FILLED_BY_WRANGLER_AFTER_CREATE"
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+APP_URL = "http://localhost:8787"
