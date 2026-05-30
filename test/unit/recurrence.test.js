@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nextOccurrence } from "../src/recurrence.js";
+import { nextOccurrence } from "../../src/recurrence.js";
 
 describe("nextOccurrence", () => {
   it("daily adds one day", () => {
