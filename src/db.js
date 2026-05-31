@@ -25,3 +25,34 @@ export async function getUserBySession(env, sessionId) {
   ).bind(sessionId, new Date().toISOString()).first();
   return row || null;
 }
+
+export async function insertTodo(env, userId, rawText, cleaned) {
+  const id = crypto.randomUUID();
+  const nowIso = new Date().toISOString();
+  await env.DB.prepare(
+    `INSERT INTO todos (id, user_id, raw_text, title, notes, status, due_at, reminder_at, recurrence, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'open', ?, ?, ?, ?, ?)`
+  ).bind(
+    id, userId, rawText, cleaned.title, cleaned.notes,
+    cleaned.due_at, cleaned.reminder_at,
+    cleaned.recurrence ? JSON.stringify(cleaned.recurrence) : null,
+    nowIso, nowIso
+  ).run();
+  return getTodo(env, userId, id);
+}
+
+export async function getTodo(env, userId, id) {
+  return env.DB.prepare("SELECT * FROM todos WHERE id = ? AND user_id = ?").bind(id, userId).first();
+}
+
+export async function listTodos(env, userId) {
+  const { results } = await env.DB.prepare(
+    `SELECT * FROM todos WHERE user_id = ?
+     ORDER BY status = 'done', COALESCE(due_at, '9999'), created_at`
+  ).bind(userId).all();
+  return results;
+}
+
+export async function deleteTodo(env, userId, id) {
+  await env.DB.prepare("DELETE FROM todos WHERE id = ? AND user_id = ?").bind(id, userId).run();
+}
