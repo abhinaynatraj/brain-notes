@@ -21,8 +21,9 @@ export function parseCookies(req) {
   return out;
 }
 
-export function serializeCookie(name, value, { maxAge, httpOnly = true } = {}) {
-  let c = `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax; Secure`;
+export function serializeCookie(name, value, { maxAge, httpOnly = true, secure = true } = {}) {
+  let c = `${name}=${encodeURIComponent(value)}; Path=/; SameSite=Lax`;
+  if (secure) c += "; Secure";
   if (httpOnly) c += "; HttpOnly";
   if (maxAge != null) c += `; Max-Age=${maxAge}`;
   return c;
