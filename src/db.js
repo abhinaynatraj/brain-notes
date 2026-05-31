@@ -1,11 +1,12 @@
 export async function findOrCreateUser(env, email) {
-  const existing = await env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
-  if (existing) return existing;
+  // INSERT OR IGNORE is idempotent: concurrent first-logins for the same email
+  // can't both throw on the UNIQUE(email) constraint. Re-fetch to get the row
+  // regardless of which request won the insert.
   const id = crypto.randomUUID();
   const created_at = new Date().toISOString();
-  await env.DB.prepare("INSERT INTO users (id, email, created_at) VALUES (?, ?, ?)")
+  await env.DB.prepare("INSERT OR IGNORE INTO users (id, email, created_at) VALUES (?, ?, ?)")
     .bind(id, email, created_at).run();
-  return { id, email, created_at };
+  return env.DB.prepare("SELECT * FROM users WHERE email = ?").bind(email).first();
 }
 
 export async function createSession(env, userId, ttlSeconds = 60 * 60 * 24 * 30) {

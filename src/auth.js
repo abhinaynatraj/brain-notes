@@ -26,11 +26,14 @@ export async function requestLogin(request, env) {
 export async function verifyLogin(request, env) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
-  const row = token && await env.DB.prepare(
-    "SELECT * FROM login_tokens WHERE token = ? AND used = 0 AND expires_at > ?"
-  ).bind(token, new Date().toISOString()).first();
-  if (!row) return json({ error: "invalid or expired token" }, 400);
-  await env.DB.prepare("UPDATE login_tokens SET used = 1 WHERE token = ?").bind(token).run();
+  if (!token) return json({ error: "invalid or expired token" }, 400);
+  // Atomically claim the token: only one concurrent request can flip used 0->1,
+  // so a single magic link can never mint more than one session (no TOCTOU race).
+  const claim = await env.DB.prepare(
+    "UPDATE login_tokens SET used = 1 WHERE token = ? AND used = 0 AND expires_at > ?"
+  ).bind(token, new Date().toISOString()).run();
+  if (!claim.meta.changes) return json({ error: "invalid or expired token" }, 400);
+  const row = await env.DB.prepare("SELECT email FROM login_tokens WHERE token = ?").bind(token).first();
   const user = await findOrCreateUser(env, row.email);
   const sessionId = await createSession(env, user.id);
   return new Response(null, {
