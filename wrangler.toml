@@ -10,10 +10,17 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "brain_notes"
+# Run `npx wrangler d1 create brain_notes` and paste the printed id here.
+# Deploy will fail until this is a real id.
 database_id = "PLACEHOLDER_FILLED_BY_WRANGLER_AFTER_CREATE"
 
 [triggers]
 crons = ["* * * * *"]
 
+# APP_URL is used to build the magic-link URL that gets emailed. The localhost
+# value below is for `wrangler dev` ONLY. BEFORE the first real deploy, override
+# it with your production origin via a Worker secret so emailed links work:
+#   npx wrangler secret put APP_URL   # e.g. https://brain-notes.<you>.workers.dev
+# (A Worker secret of the same name overrides this [vars] value in production.)
 [vars]
 APP_URL = "http://localhost:8787"
