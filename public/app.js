@@ -344,12 +344,13 @@ async function enablePush() {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(key),
     });
-    await fetch("/api/push/subscribe", {
+    const subRes = await fetch("/api/push/subscribe", {
       method: "POST",
       credentials: "same-origin",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ subscription: sub.toJSON() }),
     });
+    if (!subRes.ok) { toast("Couldn’t save the subscription — try again."); return; }
     toast("Reminders enabled ✓");
   } catch (e) {
     toast("Couldn’t enable reminders.");

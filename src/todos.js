@@ -47,6 +47,16 @@ export async function patchTodo(request, env, user, id) {
       .bind(body.status, completed_at, nowIso, id, user.id).run();
   }
 
+  // Validate client-supplied date fields: must be null or "YYYY-MM-DDTHH:mm:ss".
+  // Rejecting empty/garbage strings keeps the cron's `reminder_at <= now` scan
+  // from matching a "" that would fire immediately and repeatedly.
+  const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+  for (const f of ["due_at", "reminder_at"]) {
+    if (f in body && body[f] !== null && (typeof body[f] !== "string" || !ISO_RE.test(body[f]))) {
+      return json({ error: `invalid ${f}` }, 400);
+    }
+  }
+
   // Editable fields — column names come from this hardcoded allowlist (NOT user
   // input), so interpolating them into the SQL is safe from injection. Applied
   // in a single UPDATE to avoid one D1 round trip per edited field.

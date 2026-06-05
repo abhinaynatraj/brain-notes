@@ -62,10 +62,18 @@ async function sendToUser(env, userId, payload) {
 
 export async function sendDueReminders(env, nowIso = new Date().toISOString()) {
   const due = await selectDueReminders(env, nowIso);
+  let sent = 0;
   for (const todo of due) {
+    // Claim the reminder by stamping reminder_sent_at FIRST, atomically. If we
+    // don't win the claim (concurrent cron, or already sent), skip. Stamping
+    // before sending means a crash drops at most one notification rather than
+    // re-firing every minute.
+    const claim = await env.DB.prepare(
+      "UPDATE todos SET reminder_sent_at = ? WHERE id = ? AND reminder_sent_at IS NULL"
+    ).bind(nowIso, todo.id).run();
+    if (!claim.meta.changes) continue;
     await sendToUser(env, todo.user_id, { title: "Brain Notes", body: todo.title, todoId: todo.id });
-    await env.DB.prepare("UPDATE todos SET reminder_sent_at = ? WHERE id = ?")
-      .bind(nowIso, todo.id).run();
+    sent++;
   }
-  return due.length;
+  return sent;
 }

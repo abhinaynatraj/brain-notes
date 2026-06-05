@@ -29,9 +29,16 @@ export function nextOccurrence(iso, recurrence) {
     case "weekly":
       dt.setUTCDate(dt.getUTCDate() + 7 * interval);
       break;
-    case "monthly":
+    case "monthly": {
+      // setUTCMonth overflows (Jan 31 + 1mo -> Mar 3). Clamp to the last day of
+      // the target month so e.g. the 31st becomes the 28th/30th, not next month.
+      const day = dt.getUTCDate();
+      dt.setUTCDate(1);
       dt.setUTCMonth(dt.getUTCMonth() + interval);
+      const lastDay = new Date(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0)).getUTCDate();
+      dt.setUTCDate(Math.min(day, lastDay));
       break;
+    }
     case "weekdays": {
       do {
         dt.setUTCDate(dt.getUTCDate() + 1);

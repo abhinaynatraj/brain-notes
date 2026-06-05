@@ -34,6 +34,7 @@ export async function verifyLogin(request, env) {
   ).bind(token, new Date().toISOString()).run();
   if (!claim.meta.changes) return json({ error: "invalid or expired token" }, 400);
   const row = await env.DB.prepare("SELECT email FROM login_tokens WHERE token = ?").bind(token).first();
+  if (!row) return json({ error: "invalid or expired token" }, 400);
   const user = await findOrCreateUser(env, row.email);
   const sessionId = await createSession(env, user.id);
   return new Response(null, {
@@ -51,8 +52,7 @@ export async function logout(request, env) {
   if (sessionId) {
     await env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
   }
-  return new Response(null, {
-    status: 302,
-    headers: { location: "/", "set-cookie": serializeCookie("session", "", { maxAge: 0, secure: !isLocalhost(request) }) },
+  return json({ ok: true }, 200, {
+    "set-cookie": serializeCookie("session", "", { maxAge: 0, secure: !isLocalhost(request) }),
   });
 }
