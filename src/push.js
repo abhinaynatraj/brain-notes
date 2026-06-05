@@ -23,6 +23,7 @@ export async function subscribePush(request, env, user) {
 
 export async function unsubscribePush(request, env, user) {
   const { endpoint } = await request.json().catch(() => ({}));
+  if (!endpoint) return json({ error: "bad request" }, 400);
   await env.DB.prepare("DELETE FROM push_subscriptions WHERE user_id = ? AND endpoint = ?")
     .bind(user.id, endpoint).run();
   return json({ ok: true });

@@ -3,8 +3,7 @@ import { createRouter } from "./router.js";
 import { getUserBySession } from "./db.js";
 import { requestLogin, verifyLogin, logout } from "./auth.js";
 import { createTodo, getTodos, patchTodo, removeTodo } from "./todos.js";
-import { subscribePush, unsubscribePush, vapidPublicKey } from "./push.js";
-import { sendDueReminders } from "./push.js";
+import { subscribePush, unsubscribePush, vapidPublicKey, sendDueReminders } from "./push.js";
 
 const router = createRouter();
 router.post("/api/auth/request", (req, env) => requestLogin(req, env));
