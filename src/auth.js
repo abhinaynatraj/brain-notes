@@ -1,4 +1,4 @@
-import { json, randomToken, serializeCookie } from "./util.js";
+import { json, randomToken, serializeCookie, parseCookies } from "./util.js";
 import { findOrCreateUser, createSession } from "./db.js";
 import { sendMagicLink } from "./email.js";
 
@@ -45,7 +45,12 @@ export async function verifyLogin(request, env) {
   });
 }
 
-export function logout(request) {
+export async function logout(request, env) {
+  // Invalidate server-side too, so a captured cookie can't outlive logout.
+  const sessionId = parseCookies(request).session;
+  if (sessionId) {
+    await env.DB.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
+  }
   return new Response(null, {
     status: 302,
     headers: { location: "/", "set-cookie": serializeCookie("session", "", { maxAge: 0, secure: !isLocalhost(request) }) },

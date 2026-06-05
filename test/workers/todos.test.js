@@ -44,4 +44,21 @@ describe("todos", () => {
     await patchTodo(req, env, { id: USER }, todo.id);
     expect((await listTodos(env, USER)).length).toBe(1);
   });
+
+  it("applies a combined status + field edit in one request", async () => {
+    const todo = await insertTodo(env, USER, "task", { title: "Task", notes: null, due_at: null, reminder_at: null, recurrence: null });
+    const req = new Request("http://x", { method: "PATCH", body: JSON.stringify({ status: "done", title: "Task done" }) });
+    await patchTodo(req, env, { id: USER }, todo.id);
+    const updated = await getTodo(env, USER, todo.id);
+    expect(updated.status).toBe("done");
+    expect(updated.title).toBe("Task done");
+    expect(updated.completed_at).not.toBeNull();
+  });
+
+  it("rejects an invalid status", async () => {
+    const todo = await insertTodo(env, USER, "x", { title: "X", notes: null, due_at: null, reminder_at: null, recurrence: null });
+    const req = new Request("http://x", { method: "PATCH", body: JSON.stringify({ status: "archived" }) });
+    const res = await patchTodo(req, env, { id: USER }, todo.id);
+    expect(res.status).toBe(400);
+  });
 });

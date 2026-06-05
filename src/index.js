@@ -9,7 +9,7 @@ import { sendDueReminders } from "./push.js";
 const router = createRouter();
 router.post("/api/auth/request", (req, env) => requestLogin(req, env));
 router.get("/api/auth/verify", (req, env) => verifyLogin(req, env));
-router.post("/api/auth/logout", (req) => logout(req));
+router.post("/api/auth/logout", (req, env) => logout(req, env));
 router.get("/api/push/vapid-public-key", (req, env) => vapidPublicKey(req, env));
 
 const authed = {

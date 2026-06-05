@@ -31,4 +31,12 @@ describe("createRouter", () => {
     r.get("/api/todos", () => {});
     expect(r.match("GET", "/api/nope")).toBeNull();
   });
+
+  it("treats a literal dot as a dot, not a wildcard", () => {
+    const r = createRouter();
+    r.get("/api/v1.0/health", () => {});
+    expect(r.match("GET", "/api/v1.0/health")).not.toBeNull();
+    // A different char where the dot is must NOT match.
+    expect(r.match("GET", "/api/v1X0/health")).toBeNull();
+  });
 });

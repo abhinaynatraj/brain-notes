@@ -47,14 +47,16 @@ export async function patchTodo(request, env, user, id) {
       .bind(body.status, completed_at, nowIso, id, user.id).run();
   }
 
-  // Editable fields — keys come from this hardcoded allowlist (NOT user input),
-  // so the column name in the template literal is safe from SQL injection.
+  // Editable fields — column names come from this hardcoded allowlist (NOT user
+  // input), so interpolating them into the SQL is safe from injection. Applied
+  // in a single UPDATE to avoid one D1 round trip per edited field.
   const fields = ["title", "notes", "due_at", "reminder_at"];
-  for (const f of fields) {
-    if (f in body) {
-      await env.DB.prepare(`UPDATE todos SET ${f} = ?, updated_at = ? WHERE id = ? AND user_id = ?`)
-        .bind(body[f], nowIso, id, user.id).run();
-    }
+  const edits = fields.filter((f) => f in body);
+  if (edits.length) {
+    const setClause = [...edits.map((f) => `${f} = ?`), "updated_at = ?"].join(", ");
+    const binds = [...edits.map((f) => body[f]), nowIso, id, user.id];
+    await env.DB.prepare(`UPDATE todos SET ${setClause} WHERE id = ? AND user_id = ?`)
+      .bind(...binds).run();
   }
   return json(await getTodo(env, user.id, id));
 }
