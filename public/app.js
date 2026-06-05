@@ -299,6 +299,63 @@ function renderLogin() {
   document.getElementById("email").focus();
 }
 
+// ---------- PWA: service worker + push ----------
+async function registerSW() {
+  if (!("serviceWorker" in navigator)) return null;
+  return navigator.serviceWorker.register("/sw.js");
+}
+
+function isStandalone() {
+  return matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+}
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    // iPadOS 13+ reports as Mac; detect by touch.
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function urlBase64ToUint8Array(base64) {
+  const padding = "=".repeat((4 - (base64.length % 4)) % 4);
+  const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(b64);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
+async function enablePush() {
+  // iOS only delivers Web Push to a home-screen-installed PWA (iOS 16.4+).
+  if (isIOS() && !isStandalone()) {
+    toast("Add Brain Notes to your Home Screen first, then enable reminders.");
+    return;
+  }
+  if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    toast("Reminders aren’t supported on this browser.");
+    return;
+  }
+  try {
+    const reg = (await navigator.serviceWorker.getRegistration()) || (await registerSW());
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { toast("Reminders need notification permission."); return; }
+
+    const keyRes = await fetch("/api/push/vapid-public-key", { credentials: "same-origin" });
+    const { key } = await keyRes.json();
+    if (!key) { toast("Reminders aren’t configured on the server yet."); return; }
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(key),
+    });
+    await fetch("/api/push/subscribe", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ subscription: sub.toJSON() }),
+    });
+    toast("Reminders enabled ✓");
+  } catch (e) {
+    toast("Couldn’t enable reminders.");
+  }
+}
+
 // ---------- boot ----------
 (async () => {
   if ("serviceWorker" in navigator && typeof registerSW === "function") {
