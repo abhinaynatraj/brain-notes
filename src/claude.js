@@ -73,10 +73,7 @@ export async function cleanupWithClaude(env, { rawText, now, timezone }) {
       }],
     }),
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`claude ${res.status}: ${body.slice(0, 300)}`);
-  }
+  if (!res.ok) throw new Error(`claude ${res.status}`);
   const data = await res.json();
   const text = data.content?.[0]?.text ?? "";
   const match = text.match(/\{[\s\S]*\}/);
@@ -89,8 +86,9 @@ export async function cleanupOrFallback(env, args) {
   try {
     return await cleanupWithClaude(env, args);
   } catch (e) {
-    // TEMP diagnostic: surface WHY the cleanup fell back (visible in `wrangler tail`).
-    console.log("cleanup fallback:", e && e.message, "| key set:", !!env.ANTHROPIC_API_KEY);
+    // Log the reason a cleanup fell back (status only, no response bodies) so
+    // issues like an expired key or empty credit balance are visible in logs.
+    console.log("cleanup fallback:", e && e.message);
     return fallbackCleanup(args.rawText);
   }
 }
