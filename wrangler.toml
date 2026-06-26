@@ -12,7 +12,7 @@ binding = "DB"
 database_name = "brain_notes"
 # Run `npx wrangler d1 create brain_notes` and paste the printed id here.
 # Deploy will fail until this is a real id.
-database_id = "PLACEHOLDER_FILLED_BY_WRANGLER_AFTER_CREATE"
+database_id = "d35f6fec-2126-492d-8798-3f310342b3df"
 
 [triggers]
 crons = ["* * * * *"]
