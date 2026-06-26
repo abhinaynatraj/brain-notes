@@ -17,10 +17,9 @@ database_id = "d35f6fec-2126-492d-8798-3f310342b3df"
 [triggers]
 crons = ["* * * * *"]
 
-# APP_URL is used to build the magic-link URL that gets emailed. The localhost
-# value below is for `wrangler dev` ONLY. BEFORE the first real deploy, override
-# it with your production origin via a Worker secret so emailed links work:
-#   npx wrangler secret put APP_URL   # e.g. https://brain-notes.<you>.workers.dev
-# (A Worker secret of the same name overrides this [vars] value in production.)
+# APP_URL builds the magic-link URL that gets emailed, so it must be the
+# PRODUCTION origin (it's a public URL, not a secret — it can't be a Worker
+# secret because a secret and a var can't share a name). For local `wrangler
+# dev`, override it to http://localhost:8787 by adding that line to .dev.vars.
 [vars]
-APP_URL = "http://localhost:8787"
+APP_URL = "https://brain-notes.abhinay-natraj.workers.dev"

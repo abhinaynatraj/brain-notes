@@ -1,4 +1,6 @@
 # Copy to .dev.vars and fill in. NEVER commit .dev.vars.
+# For local dev, point APP_URL at the dev server (overrides wrangler.toml [vars]).
+APP_URL=http://localhost:8787
 ANTHROPIC_API_KEY=sk-ant-...
 VAPID_PUBLIC_KEY=
 VAPID_PRIVATE_KEY=
