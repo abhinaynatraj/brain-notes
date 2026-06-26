@@ -85,7 +85,9 @@ export async function cleanupWithClaude(env, { rawText, now, timezone }) {
 export async function cleanupOrFallback(env, args) {
   try {
     return await cleanupWithClaude(env, args);
-  } catch {
+  } catch (e) {
+    // TEMP diagnostic: surface WHY the cleanup fell back (visible in `wrangler tail`).
+    console.log("cleanup fallback:", e && e.message, "| key set:", !!env.ANTHROPIC_API_KEY);
     return fallbackCleanup(args.rawText);
   }
 }
