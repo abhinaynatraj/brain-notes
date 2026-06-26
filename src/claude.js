@@ -66,14 +66,17 @@ export async function cleanupWithClaude(env, { rawText, now, timezone }) {
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
       max_tokens: 512,
-      system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
+      system: SYSTEM_PROMPT,
       messages: [{
         role: "user",
         content: `now=${now} timezone=${timezone}\nNote: ${rawText}`,
       }],
     }),
   });
-  if (!res.ok) throw new Error(`claude ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`claude ${res.status}: ${body.slice(0, 300)}`);
+  }
   const data = await res.json();
   const text = data.content?.[0]?.text ?? "";
   const match = text.match(/\{[\s\S]*\}/);
