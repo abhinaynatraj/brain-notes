@@ -346,6 +346,33 @@ body {
   to { background-position: -200% 0; }
 }
 
+/* ---------- View tabs (All / Today) ---------- */
+.viewtabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  margin: 0 0 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.viewtab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: 500 13px/1 var(--sans);
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 0.2s var(--ease), color 0.2s var(--ease);
+}
+.viewtab.active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

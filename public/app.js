@@ -1,4 +1,5 @@
 // Brain Notes — single-page client. Capture, list, status, theme.
+import { buildToday } from "/today.js";
 
 const app = document.getElementById("app");
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -126,11 +127,17 @@ function todoEl(t) {
 
 // ---------- data actions ----------
 let todos = [];
+let view = "all"; // "all" | "today"
+
+function renderCurrentView() {
+  if (view === "today") renderToday();
+  else renderList();
+}
 
 async function loadTodos() {
   const res = await api("/api/todos");
   todos = await res.json();
-  renderList();
+  renderCurrentView();
 }
 
 function renderList() {
@@ -157,6 +164,29 @@ function renderList() {
     done.forEach((t) => wrap.appendChild(todoEl(t)));
     list.appendChild(wrap);
   }
+}
+
+function todayGroup(label, items) {
+  const wrap = el("div");
+  wrap.appendChild(el("div", { class: "section-label" }, `${label} · ${items.length}`));
+  const list = el("div", { class: "list" });
+  items.forEach((t) => list.appendChild(todoEl(t)));
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function renderToday() {
+  const list = document.getElementById("list");
+  if (!list) return;
+  const { overdue, today } = buildToday(todos, localNow());
+  list.innerHTML = "";
+  if (!overdue.length && !today.length) {
+    list.appendChild(el("div", { class: "empty" },
+      `<div class="empty-mark">✓</div><p>Nothing pending for today. Nice.</p>`));
+    return;
+  }
+  if (overdue.length) list.appendChild(todayGroup("Overdue", overdue));
+  if (today.length) list.appendChild(todayGroup("Today", today));
 }
 
 async function submitCapture(text) {
@@ -228,6 +258,11 @@ function renderApp() {
       <p class="hint">Write it however it comes out — it’ll be tidied into a crisp todo.</p>
     </form>
 
+    <div class="viewtabs" id="viewtabs">
+      <button class="viewtab" data-view="all">All</button>
+      <button class="viewtab" data-view="today">Today</button>
+    </div>
+
     <main id="list"></main>`;
 
   const ta = document.getElementById("raw");
@@ -259,6 +294,20 @@ function renderApp() {
     if (typeof enablePush === "function") enablePush();
     else toast("Reminders need the installed app.");
   });
+
+  const tabs = document.getElementById("viewtabs");
+  function syncTabs() {
+    tabs.querySelectorAll(".viewtab").forEach((b) =>
+      b.classList.toggle("active", b.dataset.view === view));
+  }
+  tabs.querySelectorAll(".viewtab").forEach((b) => {
+    b.addEventListener("click", () => {
+      view = b.dataset.view;
+      syncTabs();
+      renderCurrentView();
+    });
+  });
+  syncTabs();
 
   ta.focus();
   loadTodos();
