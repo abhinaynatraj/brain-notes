@@ -35,7 +35,7 @@ describe("todos", () => {
     const done = list.filter((t) => t.status === "done");
     expect(done.length).toBe(1);
     expect(open.length).toBe(1);
-    expect(open[0].reminder_at).toBe("2026-06-02T09:00:00");
+    expect(open[0].reminder_at).toBe("2026-06-02T09:00:00.000Z");
   });
 
   it("non-recurring done does not spawn", async () => {

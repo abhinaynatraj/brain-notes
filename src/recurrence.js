@@ -1,18 +1,16 @@
-// Works on naive local-time ISO strings "YYYY-MM-DDTHH:mm:ss".
-// Date math uses UTC accessors on a Date built from the string to avoid
-// the host timezone shifting the calendar day.
+// Works on UTC instant ISO strings (e.g. "2026-06-29T16:00:00.000Z"); also
+// tolerates the older naive form. Date math uses UTC accessors and the result
+// is emitted as a UTC ISO instant so recurrence preserves the timezone contract.
 
 function parse(iso) {
-  const [d, t] = iso.split("T");
+  const [d, t] = iso.replace("Z", "").split("T");
   const [Y, M, D] = d.split("-").map(Number);
-  const [h, m, s] = (t || "00:00:00").split(":").map(Number);
+  const [h, m, s] = (t || "00:00:00").split(":").map((v) => parseInt(v, 10));
   return new Date(Date.UTC(Y, M - 1, D, h, m, s || 0));
 }
 
 function format(dt) {
-  const p = (n, w = 2) => String(n).padStart(w, "0");
-  return `${dt.getUTCFullYear()}-${p(dt.getUTCMonth() + 1)}-${p(dt.getUTCDate())}` +
-    `T${p(dt.getUTCHours())}:${p(dt.getUTCMinutes())}:${p(dt.getUTCSeconds())}`;
+  return dt.toISOString();
 }
 
 export function nextOccurrence(iso, recurrence) {
