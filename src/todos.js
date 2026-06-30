@@ -2,6 +2,7 @@ import { json } from "./util.js";
 import { cleanupOrFallback } from "./claude.js";
 import { nextOccurrence } from "./recurrence.js";
 import { insertTodo, getTodo, listTodos, deleteTodo } from "./db.js";
+import { localToUtc } from "./tz.js";
 
 export async function createTodo(request, env, user) {
   const body = await request.json().catch(() => ({}));
@@ -10,6 +11,10 @@ export async function createTodo(request, env, user) {
   const now = body.now || new Date().toISOString().slice(0, 19);
   const timezone = body.timezone || "UTC";
   const cleaned = await cleanupOrFallback(env, { rawText, now, timezone });
+  // Claude returns naive local times; store true UTC instants so the cron
+  // (which compares against a UTC now) fires at the correct moment.
+  cleaned.due_at = localToUtc(cleaned.due_at, timezone);
+  cleaned.reminder_at = localToUtc(cleaned.reminder_at, timezone);
   const todo = await insertTodo(env, user.id, rawText, cleaned);
   return json(todo, 201);
 }
@@ -47,10 +52,11 @@ export async function patchTodo(request, env, user, id) {
       .bind(body.status, completed_at, nowIso, id, user.id).run();
   }
 
-  // Validate client-supplied date fields: must be null or "YYYY-MM-DDTHH:mm:ss".
-  // Rejecting empty/garbage strings keeps the cron's `reminder_at <= now` scan
-  // from matching a "" that would fire immediately and repeatedly.
-  const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+  // Validate client-supplied date fields: must be null or an ISO datetime.
+  // Accepts both the naive form and a UTC instant ("…Z", optional millis) since
+  // edits now send UTC. Rejecting empty/garbage strings keeps the cron's
+  // `reminder_at <= now` scan from matching a "" that fires immediately.
+  const ISO_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z?$/;
   for (const f of ["due_at", "reminder_at"]) {
     if (f in body && body[f] !== null && (typeof body[f] !== "string" || !ISO_RE.test(body[f]))) {
       return json({ error: `invalid ${f}` }, 400);

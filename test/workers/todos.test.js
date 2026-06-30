@@ -61,4 +61,13 @@ describe("todos", () => {
     const res = await patchTodo(req, env, { id: USER }, todo.id);
     expect(res.status).toBe(400);
   });
+
+  it("the create path's UTC conversion runs under the Workers Intl", async () => {
+    // cleanupOrFallback returns null dates without an API key, so the conversion
+    // itself is covered exhaustively in test/unit/tz.test.js; this confirms
+    // localToUtc resolves and computes correctly inside the Workers runtime.
+    const { localToUtc } = await import("../../src/tz.js");
+    expect(localToUtc("2026-06-29T12:00:00", "America/Toronto")).toBe("2026-06-29T16:00:00.000Z");
+    expect(localToUtc(null, "America/Toronto")).toBeNull();
+  });
 });
