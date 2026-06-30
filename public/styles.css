@@ -78,12 +78,18 @@ body {
   letter-spacing: -0.02em;
   line-height: 1;
   margin: 0;
+  white-space: nowrap;
 }
 .wordmark .dot { color: var(--accent); }
-.toolbar { display: flex; gap: 6px; flex: none; }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
 
+/* Below ~560px the wordmark + 5 pills don't fit on one row; stack the toolbar
+   under the wordmark so pills flow cleanly instead of crowding/clipping. */
+@media (max-width: 560px) {
+  .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .toolbar { justify-content: flex-start; }
+}
 @media (max-width: 460px) {
-  .topbar { gap: 10px; }
   .toolbar { gap: 4px; }
   .iconbtn { padding: 7px 10px; font-size: 12px; }
 }

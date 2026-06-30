@@ -248,6 +248,8 @@ function renderApp() {
       <h1 class="wordmark">Brain Notes<span class="dot">.</span></h1>
       <div class="toolbar">
         <button class="iconbtn" id="notifyBtn">Reminders</button>
+        <button class="iconbtn" id="clearDoneBtn">Clear done</button>
+        <button class="iconbtn" id="deleteAllBtn">Delete all</button>
         <button class="iconbtn" id="themeBtn">${THEME_LABEL[currentTheme()]}</button>
         <button class="iconbtn" id="logoutBtn">Sign out</button>
       </div>
@@ -296,6 +298,27 @@ function renderApp() {
   document.getElementById("notifyBtn").addEventListener("click", () => {
     if (typeof enablePush === "function") enablePush();
     else toast("Reminders need the installed app.");
+  });
+  document.getElementById("clearDoneBtn").addEventListener("click", async () => {
+    try {
+      const res = await api("/api/todos?scope=done", { method: "DELETE" });
+      const { deleted } = await res.json();
+      await loadTodos();
+      toast(deleted ? "Cleared done" : "Nothing to clear");
+    } catch (e) {
+      if (e.message !== "unauthorized") toast("Couldn’t clear — try again.");
+    }
+  });
+  document.getElementById("deleteAllBtn").addEventListener("click", async () => {
+    if (!todos.length) { toast("Nothing to delete"); return; }
+    if (!confirm(`Delete all ${todos.length} todos? This can’t be undone.`)) return;
+    try {
+      await api("/api/todos?scope=all", { method: "DELETE" });
+      await loadTodos();
+      toast("All cleared");
+    } catch (e) {
+      if (e.message !== "unauthorized") toast("Couldn’t delete — try again.");
+    }
   });
 
   const tabs = document.getElementById("viewtabs");
