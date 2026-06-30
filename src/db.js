@@ -56,3 +56,16 @@ export async function listTodos(env, userId) {
 export async function deleteTodo(env, userId, id) {
   await env.DB.prepare("DELETE FROM todos WHERE id = ? AND user_id = ?").bind(id, userId).run();
 }
+
+export async function deleteTodos(env, userId, scope) {
+  let sql;
+  if (scope === "done") {
+    sql = "DELETE FROM todos WHERE user_id = ? AND status = 'done'";
+  } else if (scope === "all") {
+    sql = "DELETE FROM todos WHERE user_id = ?";
+  } else {
+    return 0;
+  }
+  const res = await env.DB.prepare(sql).bind(userId).run();
+  return res.meta.changes || 0;
+}

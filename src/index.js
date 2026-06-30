@@ -2,7 +2,7 @@ import { json, parseCookies } from "./util.js";
 import { createRouter } from "./router.js";
 import { getUserBySession } from "./db.js";
 import { requestLogin, verifyLogin, logout } from "./auth.js";
-import { createTodo, getTodos, patchTodo, removeTodo } from "./todos.js";
+import { createTodo, getTodos, patchTodo, removeTodo, clearTodos } from "./todos.js";
 import { subscribePush, unsubscribePush, vapidPublicKey, sendDueReminders } from "./push.js";
 
 const router = createRouter();
@@ -34,6 +34,10 @@ export default {
 
       const key = `${request.method} ${pathname}`;
       if (authed[key]) return authed[key](request, env, user);
+
+      if (pathname === "/api/todos" && request.method === "DELETE") {
+        return clearTodos(request, env, user);
+      }
 
       const m = pathname.match(/^\/api\/todos\/([^/]+)$/);
       if (m) {

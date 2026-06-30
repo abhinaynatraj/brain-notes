@@ -1,7 +1,7 @@
 import { json } from "./util.js";
 import { cleanupOrFallback } from "./claude.js";
 import { nextOccurrence } from "./recurrence.js";
-import { insertTodo, getTodo, listTodos, deleteTodo } from "./db.js";
+import { insertTodo, getTodo, listTodos, deleteTodo, deleteTodos } from "./db.js";
 import { localToUtc } from "./tz.js";
 
 export async function createTodo(request, env, user) {
@@ -80,4 +80,13 @@ export async function patchTodo(request, env, user, id) {
 export async function removeTodo(request, env, user, id) {
   await deleteTodo(env, user.id, id);
   return json({ ok: true });
+}
+
+export async function clearTodos(request, env, user) {
+  const scope = new URL(request.url).searchParams.get("scope");
+  if (scope !== "done" && scope !== "all") {
+    return json({ error: "invalid scope" }, 400);
+  }
+  const deleted = await deleteTodos(env, user.id, scope);
+  return json({ deleted });
 }

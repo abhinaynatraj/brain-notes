@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { describe, it, expect, beforeEach } from "vitest";
-import { insertTodo, listTodos, getTodo } from "../../src/db.js";
-import { patchTodo } from "../../src/todos.js";
+import { insertTodo, listTodos, getTodo, deleteTodos } from "../../src/db.js";
+import { patchTodo, clearTodos } from "../../src/todos.js";
 
 async function migrate() {
   await env.DB.prepare(
@@ -69,5 +69,51 @@ describe("todos", () => {
     const { localToUtc } = await import("../../src/tz.js");
     expect(localToUtc("2026-06-29T12:00:00", "America/Toronto")).toBe("2026-06-29T16:00:00.000Z");
     expect(localToUtc(null, "America/Toronto")).toBeNull();
+  });
+});
+
+describe("clear actions", () => {
+  async function seedFor(user, id, status) {
+    await env.DB.prepare(
+      `INSERT INTO todos (id, user_id, raw_text, title, status, created_at, updated_at)
+       VALUES (?, ?, 'r', 't', ?, '2026-01-01', '2026-01-01')`
+    ).bind(id, user, status).run();
+  }
+
+  it("scope=done deletes only this user's done todos", async () => {
+    await seedFor("u1", "a", "done");
+    await seedFor("u1", "b", "open");
+    await seedFor("u2", "c", "done"); // other user — must be untouched
+    const n = await deleteTodos(env, "u1", "done");
+    expect(n).toBe(1);
+    const mine = await listTodos(env, "u1");
+    expect(mine.map((t) => t.id).sort()).toEqual(["b"]);
+    const other = await listTodos(env, "u2");
+    expect(other.map((t) => t.id)).toEqual(["c"]);
+  });
+
+  it("scope=all deletes all this user's todos but not another user's", async () => {
+    await seedFor("u1", "a", "done");
+    await seedFor("u1", "b", "open");
+    await seedFor("u2", "c", "open");
+    const n = await deleteTodos(env, "u1", "all");
+    expect(n).toBe(2);
+    expect(await listTodos(env, "u1")).toEqual([]);
+    expect((await listTodos(env, "u2")).map((t) => t.id)).toEqual(["c"]);
+  });
+
+  it("clearTodos rejects an invalid scope with 400", async () => {
+    const req = new Request("http://x/api/todos?scope=bogus", { method: "DELETE" });
+    const res = await clearTodos(req, env, { id: "u1" });
+    expect(res.status).toBe(400);
+  });
+
+  it("clearTodos returns the deleted count", async () => {
+    await seedFor("u1", "a", "done");
+    await seedFor("u1", "b", "done");
+    const req = new Request("http://x/api/todos?scope=done", { method: "DELETE" });
+    const res = await clearTodos(req, env, { id: "u1" });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ deleted: 2 });
   });
 });
