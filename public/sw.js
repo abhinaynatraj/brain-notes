@@ -1,5 +1,5 @@
 // Brain Notes service worker — offline app shell + Web Push handling.
-const CACHE = "brain-notes-v2";
+const CACHE = "brain-notes-v3";
 const SHELL = ["/", "/index.html", "/app.js", "/styles.css", "/manifest.json", "/icons/icon-192.png", "/today.js"];
 
 self.addEventListener("install", (e) => {

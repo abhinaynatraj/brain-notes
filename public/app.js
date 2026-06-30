@@ -76,15 +76,18 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
 
 // ---------- date formatting for chips ----------
 function fmtWhen(iso) {
-  // iso is "YYYY-MM-DDTHH:mm:ss" (local, naive)
-  const [d, t] = iso.split("T");
-  const [y, m, day] = d.split("-").map(Number);
-  const time = (t || "").slice(0, 5);
+  // iso is a stored UTC instant ("…Z"); render in the browser's local time.
+  const dt = new Date(iso);
+  if (isNaN(dt.getTime())) return "";
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const today = localNow().slice(0, 10);
-  const datePart = d === today ? "Today" : `${months[m - 1]} ${day}`;
-  const hasTime = time && time !== "00:00";
-  return hasTime ? `${datePart}, ${time}` : datePart;
+  const p = (n) => String(n).padStart(2, "0");
+  const localKey = `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}`;
+  const n = new Date();
+  const todayKey = `${n.getFullYear()}-${p(n.getMonth() + 1)}-${p(n.getDate())}`;
+  const datePart = localKey === todayKey ? "Today" : `${months[dt.getMonth()]} ${dt.getDate()}`;
+  const hh = dt.getHours(), mm = dt.getMinutes();
+  const hasTime = !(hh === 0 && mm === 0);
+  return hasTime ? `${datePart}, ${p(hh)}:${p(mm)}` : datePart;
 }
 
 const RECUR_LABEL = {
@@ -178,7 +181,7 @@ function todayGroup(label, items) {
 function renderToday() {
   const list = document.getElementById("list");
   if (!list) return;
-  const { overdue, today } = buildToday(todos, localNow());
+  const { overdue, today } = buildToday(todos, Date.now());
   list.innerHTML = "";
   if (!overdue.length && !today.length) {
     list.appendChild(el("div", { class: "empty" },

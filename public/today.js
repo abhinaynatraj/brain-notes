@@ -1,35 +1,42 @@
-// Pure bucketing for the Today summary view. Operates on naive local ISO
-// strings "YYYY-MM-DDTHH:mm:ss" and compares by calendar date.
+// Pure bucketing for the Today summary view. Times are stored as UTC instants
+// ("…Z"); we bucket by the viewer's LOCAL calendar date.
 
 export function todoWhen(todo) {
   return todo.reminder_at || todo.due_at || null;
 }
 
-// "YYYY-MM-DD" date portion of a naive local ISO string.
-function dateOf(iso) {
-  return iso.slice(0, 10);
+// Local "YYYY-MM-DD" for a UTC instant (or a Date / ms value).
+export function localDateKey(value) {
+  const dt = value instanceof Date ? value : new Date(value);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${dt.getFullYear()}-${p(dt.getMonth() + 1)}-${p(dt.getDate())}`;
 }
 
-export function bucketForToday(whenIso, nowIso) {
+// nowMs is a millisecond timestamp (Date.now() in the browser).
+export function bucketForToday(whenIso, nowMs) {
   if (!whenIso) return null;
-  const d = dateOf(whenIso);
-  const today = dateOf(nowIso);
+  const when = new Date(whenIso);
+  if (isNaN(when.getTime())) return null;
+  const d = localDateKey(when);
+  const today = localDateKey(new Date(nowMs));
   if (d < today) return "overdue";
   if (d === today) return "today";
-  return null; // future day
+  return null; // future local day
 }
 
-export function buildToday(todos, nowIso) {
+export function buildToday(todos, nowMs) {
   const overdue = [];
   const today = [];
   for (const t of todos) {
     if (t.status !== "open") continue;
-    const when = todoWhen(t);
-    const bucket = bucketForToday(when, nowIso);
+    const bucket = bucketForToday(todoWhen(t), nowMs);
     if (bucket === "overdue") overdue.push(t);
     else if (bucket === "today") today.push(t);
   }
-  const byWhen = (a, b) => (todoWhen(a) < todoWhen(b) ? -1 : todoWhen(a) > todoWhen(b) ? 1 : 0);
+  const byWhen = (a, b) => {
+    const wa = todoWhen(a) || "", wb = todoWhen(b) || "";
+    return wa < wb ? -1 : wa > wb ? 1 : 0;
+  };
   overdue.sort(byWhen);
   today.sort(byWhen);
   return { overdue, today };
